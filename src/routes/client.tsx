@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TrendingUp, TrendingDown, Users, Building2, Sparkles, Loader2, Briefcase, MapPin, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Users, Building2, Sparkles, Loader2, Briefcase, MapPin, AlertTriangle, Mail, Github, ExternalLink, Calendar, FileText, Phone, Award } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -27,13 +27,19 @@ import { ChartClient } from "@/components/chart-client";
 import { useState, useEffect } from "react";
 import { createServerFn } from "@tanstack/react-start";
 import React from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { RouteGuard } from "@/components/route-guard";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/client")({
   component: ClientView,
   head: () => ({
-    meta: [{ title: "Client Analytics · EquiTech" }],
+    meta: [{ title: "Client Analytics · Parity AI" }],
   }),
 });
+
 
 // Vinxi backend Server Function to fetch candidate shortlist matching from NVIDIA API
 const shortlistCandidatesServer = createServerFn({ method: "POST" })
@@ -211,7 +217,11 @@ const candidateDatabase = [
     remote: "100% Remote only",
     skills: ["Python", "Data Cleaning", "Tableau", "SQL"],
     targetRole: "Looking for entry-level Data Analyst roles.",
-    bio: "Based in Lahore. 100% Remote only. Skills: Python, Data Cleaning, Tableau, SQL. Looking for entry-level Data Analyst roles."
+    bio: "Based in Lahore. 100% Remote only. Skills: Python, Data Cleaning, Tableau, SQL. Looking for entry-level Data Analyst roles.",
+    email: "ayesha.design@gmail.com",
+    portfolio: "github.com/stealth-data-pk",
+    phone: "+92 300 ••••781",
+    realName: "Ayesha Ahmed"
   },
   {
     id: "Candidate #02 - Karachi",
@@ -219,7 +229,11 @@ const candidateDatabase = [
     remote: "100% Remote only",
     skills: ["Figma", "UI/UX Design", "Wireframing", "Tailwind CSS"],
     targetRole: "Looking for junior design roles.",
-    bio: "Based in Karachi. 100% Remote only. Skills: Figma, UI/UX Design, Wireframing, Tailwind CSS. Looking for junior design roles."
+    bio: "Based in Karachi. 100% Remote only. Skills: Figma, UI/UX Design, Wireframing, Tailwind CSS. Looking for junior design roles.",
+    email: "candidate02.talent@parity.pk",
+    portfolio: "behance.net/stealth-design-pk",
+    phone: "+92 321 ••••942",
+    realName: "Zainab Khan"
   },
   {
     id: "Candidate #03 - Islamabad",
@@ -227,7 +241,11 @@ const candidateDatabase = [
     remote: "100% Remote only",
     skills: ["React", "JavaScript", "HTML/CSS", "Git"],
     targetRole: "Looking for Frontend Developer positions.",
-    bio: "Based in Islamabad. 100% Remote only. Skills: React, JavaScript, HTML/CSS, Git. Looking for Frontend Developer positions."
+    bio: "Based in Islamabad. 100% Remote only. Skills: React, JavaScript, HTML/CSS, Git. Looking for Frontend Developer positions.",
+    email: "candidate03.talent@parity.pk",
+    portfolio: "github.com/stealth-frontend-pk",
+    phone: "+92 333 ••••115",
+    realName: "Fatima Bibi"
   }
 ];
 
@@ -273,6 +291,8 @@ const teams = [
 ];
 
 function ClientView() {
+  const { userRole } = useAuth();
+  const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
   const [timeframe, setTimeframe] = useState<'7D' | '30D' | 'QTD' | 'YTD'>('30D');
   const [barData, setBarData] = useState(sectorData);
 
@@ -358,7 +378,8 @@ function ClientView() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1500px] mx-auto">
+    <RouteGuard allowedRoles={["client", "admin"]} currentRole={userRole}>
+      <div className="p-6 lg:p-10 max-w-[1500px] mx-auto">
       <header className="mb-8 flex items-end justify-between flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary mb-2">
@@ -609,7 +630,8 @@ function ClientView() {
               {candidateDatabase.map((cand) => (
                 <div
                   key={cand.id}
-                  className="rounded-xl border border-border bg-background/40 hover:bg-background/60 p-4 transition-all duration-200 shadow-md relative overflow-hidden group hover:border-primary/30"
+                  onClick={() => setSelectedCandidate(cand)}
+                  className="rounded-xl border border-border bg-background/40 hover:bg-background/60 p-4 transition-all duration-200 shadow-md relative overflow-hidden group hover:border-primary/30 cursor-pointer active:scale-[0.99] hover:shadow-[0_0_20px_-8px_oklch(0.65_0.25_285/30%)]"
                 >
                   <div className="absolute -right-6 -bottom-6 opacity-[0.03] text-primary group-hover:scale-110 transition-transform">
                     <Briefcase className="h-24 w-24" />
@@ -741,6 +763,131 @@ function ClientView() {
           </div>
         </div>
       </div>
+
+      {/* Sleek Contact Modal */}
+      <Dialog open={selectedCandidate !== null} onOpenChange={(open) => { if (!open) setSelectedCandidate(null); }}>
+        <DialogContent className="max-w-md bg-card/95 backdrop-blur-xl border border-border/80 rounded-2xl shadow-[var(--shadow-elegant)] p-6 text-foreground z-50">
+          {selectedCandidate && (
+            <>
+              <div className="absolute top-0 left-0 h-1 w-full bg-[image:var(--gradient-primary)]" />
+              
+              <DialogHeader className="space-y-1 mb-4 text-left">
+                <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] font-mono">
+                  Secure Talent Pipeline
+                </span>
+                <DialogTitle className="text-xl font-display font-bold text-foreground">
+                  Secure Profile: {selectedCandidate.id}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
+                  Masked Candidate Profile · Verified by Parity AI SDG-5 Protocol
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* Bio / Description */}
+              <div className="space-y-4 text-sm">
+                <div className="rounded-xl bg-background/40 border border-border/40 p-4 leading-relaxed text-muted-foreground/90">
+                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider block mb-1">
+                    Candidate Statement
+                  </span>
+                  {selectedCandidate.bio}
+                </div>
+
+                {/* Verified Skills & Badges */}
+                <div>
+                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                    <Award className="h-4.5 w-4.5 text-primary" />
+                    Verified Skills & Badges
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedCandidate.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="px-2.5 py-1 rounded bg-primary/10 border border-primary/20 text-xs text-primary font-medium flex items-center gap-1 shadow-[0_0_10px_-3px_var(--primary)]"
+                      >
+                        <Sparkles className="h-3 w-3 animate-pulse" />
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Secure Contact Information */}
+                <div className="rounded-xl border border-border bg-background/30 p-4 space-y-3">
+                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider block mb-1">
+                    Secure Contact Information
+                  </span>
+                  
+                  {/* Email */}
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                      <Mail className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/75 font-semibold">Anonymized Email</div>
+                      <a href={`mailto:${selectedCandidate.email}`} className="text-sm font-mono font-medium hover:text-primary transition truncate block">
+                        {selectedCandidate.email}
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Portfolio */}
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                      <Github className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/75 font-semibold">Stealth Portfolio</div>
+                      <a href={`https://${selectedCandidate.portfolio}`} target="_blank" rel="noopener noreferrer" className="text-sm font-mono font-medium hover:text-primary transition flex items-center gap-1 truncate block">
+                        {selectedCandidate.portfolio}
+                        <ExternalLink className="h-3 w-3 shrink-0 opacity-75" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Phone */}
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                      <Phone className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/75 font-semibold">Masked Contact</div>
+                      <div className="text-sm font-mono font-medium">
+                        {selectedCandidate.phone}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="flex flex-col sm:flex-row gap-2 mt-6">
+                <Button
+                  onClick={() => {
+                    toast.success(`Secure interview invite dispatched to ${selectedCandidate.realName || "Candidate"}!`);
+                    setSelectedCandidate(null);
+                  }}
+                  className="flex-grow h-11 rounded-xl bg-primary text-primary-foreground font-semibold shadow-[var(--shadow-glow)] hover:opacity-95 transition cursor-pointer flex items-center justify-center gap-2 text-sm border-0"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Send Interview Invite
+                </Button>
+                
+                <Button
+                  onClick={() => {
+                    toast.success(`Stealth resume downloaded for ${selectedCandidate.id}.`);
+                  }}
+                  variant="outline"
+                  className="h-11 border-border/80 hover:bg-accent rounded-xl px-4 text-sm font-medium transition cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Stealth Resume
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
-  );
+  </RouteGuard>
+);
 }

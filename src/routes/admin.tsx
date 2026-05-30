@@ -21,13 +21,16 @@ import {
 } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartClient } from "@/components/chart-client";
+import { useAuth } from "@/hooks/use-auth";
+import { RouteGuard } from "@/components/route-guard";
 
 export const Route = createFileRoute("/admin")({
   component: AdminView,
   head: () => ({
-    meta: [{ title: "Admin Console · EquiTech" }],
+    meta: [{ title: "Admin Console · Parity AI" }],
   }),
 });
+
 
 interface JobRow {
   job_id: string;
@@ -166,6 +169,7 @@ const tokenData = Array.from({ length: 24 }, (_, i) => ({
 }));
 
 function AdminView() {
+  const { userRole } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<{
@@ -181,6 +185,10 @@ function AdminView() {
   });
 
   useEffect(() => {
+    if (userRole !== "admin") {
+      setLoading(false);
+      return;
+    }
     async function loadData() {
       try {
         setLoading(true);
@@ -195,7 +203,16 @@ function AdminView() {
     }
 
     loadData();
-  }, []);
+  }, [userRole]);
+
+  if (userRole !== "admin") {
+    return (
+      <RouteGuard allowedRoles={["admin"]} currentRole={userRole}>
+        <div />
+      </RouteGuard>
+    );
+  }
+
 
   if (loading) {
     return (
