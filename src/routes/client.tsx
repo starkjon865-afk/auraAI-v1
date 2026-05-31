@@ -362,17 +362,46 @@ function ClientView() {
     try {
       const candidatesBio = candidateDatabase.map(c => c.bio);
       let result;
+
+      // 1. Preferred Choice: Secure relative call to Vercel Serverless Function (/api/shortlist)
+      // Bypasses browser CORS constraints completely and securely uses server-side environment variables.
       try {
-        result = await shortlistCandidatesServer({
-          data: {
+        const response = await fetch("/api/shortlist", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
             jobDescription: jobDescription.trim(),
             candidates: candidatesBio
-          }
+          })
         });
-      } catch (serverErr) {
-        console.warn("Server function failed, falling back to client-side API call...", serverErr);
+
+        if (response.ok) {
+          const json = await response.json();
+          result = json.choices?.[0]?.message?.content || "";
+        } else {
+          console.warn("Vercel Serverless Function returned non-ok status, trying other options...");
+        }
+      } catch (proxyErr) {
+        console.warn("Vercel Serverless Function fetch failed, trying fallbacks...", proxyErr);
       }
 
+      // 2. Fallback 1: Local TanStack Start Server Function (for dev server compatibility)
+      if (!result) {
+        try {
+          result = await shortlistCandidatesServer({
+            data: {
+              jobDescription: jobDescription.trim(),
+              candidates: candidatesBio
+            }
+          });
+        } catch (serverErr) {
+          console.warn("Server function failed, trying browser direct API call...", serverErr);
+        }
+      }
+
+      // 3. Fallback 2: Direct browser-side fetch to NVIDIA integrate endpoint
       if (!result) {
         const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.API_KEY || process.env.API_KEY;
         if (!apiKey) {
