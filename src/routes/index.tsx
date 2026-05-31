@@ -18,10 +18,10 @@ export const Route = createFileRoute("/")({
 const chatCompletionsServer = createServerFn({ method: "POST" })
   .inputValidator((d: { messages: { role: 'user' | 'assistant'; content: string }[] }) => d)
   .handler(async ({ data }) => {
-    // Read the API key from import.meta.env.API_KEY (with process.env.API_KEY fallback for SSR compatibility)
-    const apiKey = import.meta.env.API_KEY || process.env.API_KEY;
+    // Read the API key from environment variables (checking VITE_API_KEY first for bundled client compatibility)
+    const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.API_KEY || process.env.API_KEY;
     if (!apiKey) {
-      throw new Error("NVIDIA API key not found. Please set API_KEY in your .env file.");
+      throw new Error("NVIDIA API key not found. Please set VITE_API_KEY or API_KEY in your .env file or Vercel dashboard.");
     }
 
     const systemPrompt = {
@@ -33,7 +33,7 @@ const chatCompletionsServer = createServerFn({ method: "POST" })
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${import.meta.env.API_KEY || process.env.API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: "nvidia/llama-3.3-nemotron-super-49b-v1.5",

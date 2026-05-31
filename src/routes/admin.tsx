@@ -192,7 +192,66 @@ function AdminView() {
     async function loadData() {
       try {
         setLoading(true);
-        const data = await loadAdminMetricsServer();
+        let data;
+        try {
+          data = await loadAdminMetricsServer();
+        } catch (serverErr) {
+          console.warn("Server function failed, attempting client-side CSV fetch...", serverErr);
+        }
+
+        // If the server function failed or returned invalid data, process on the client
+        if (!data || !data.highValueRemoteRoles) {
+          const response = await fetch("/ai_job_market_2025.csv");
+          if (!response.ok) {
+            throw new Error(`Failed to load metrics from server or local CSV file.`);
+          }
+          const csvText = await response.text();
+          const rows = parseCSV(csvText);
+
+          let remoteCount = 0;
+          let entrySalarySum = 0;
+          let entrySalaryCount = 0;
+          const groups: Record<string, { sum: number; count: number }> = {};
+
+          for (const row of rows) {
+            const remoteRatio = Number(row.remote_ratio);
+            const salary = Number(row.salary_usd);
+
+            if (remoteRatio === 100) {
+              remoteCount++;
+            }
+
+            if (row.experience_level === "EN" && remoteRatio === 100) {
+              entrySalarySum += salary;
+              entrySalaryCount++;
+            }
+
+            if (row.employment_type === "FL" || remoteRatio === 100) {
+              const title = row.job_title;
+              if (!groups[title]) {
+                groups[title] = { sum: 0, count: 0 };
+              }
+              groups[title].sum += salary;
+              groups[title].count++;
+            }
+          }
+
+          const avgEntrySalary = entrySalaryCount > 0 ? Math.round(entrySalarySum / entrySalaryCount) : 0;
+          const groupedList = Object.keys(groups).map(title => ({
+            title,
+            avgSalary: Math.round(groups[title].sum / groups[title].count),
+            count: groups[title].count
+          }));
+          groupedList.sort((a, b) => b.avgSalary - a.avgSalary);
+
+          data = {
+            highValueRemoteRoles: remoteCount,
+            averageEntryRemoteSalary: avgEntrySalary,
+            totalListings: rows.length,
+            priorityFields: groupedList.slice(0, 3)
+          };
+        }
+
         setMetrics(data);
       } catch (err) {
         console.error(err);
@@ -203,6 +262,7 @@ function AdminView() {
     }
 
     loadData();
+
   }, [userRole]);
 
   if (userRole !== "admin") {

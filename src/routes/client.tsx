@@ -45,9 +45,9 @@ export const Route = createFileRoute("/client")({
 const shortlistCandidatesServer = createServerFn({ method: "POST" })
   .inputValidator((d: { jobDescription: string; candidates: string[] }) => d)
   .handler(async ({ data }) => {
-    const apiKey = process.env.API_KEY || import.meta.env.API_KEY;
+    const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.API_KEY || process.env.API_KEY;
     if (!apiKey) {
-      throw new Error("NVIDIA API key not found. Please set API_KEY in your .env file.");
+      throw new Error("NVIDIA API key not found. Please set VITE_API_KEY or API_KEY in your .env file or Vercel dashboard.");
     }
 
     const systemPrompt = {
