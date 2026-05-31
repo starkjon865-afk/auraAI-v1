@@ -361,12 +361,54 @@ function ClientView() {
 
     try {
       const candidatesBio = candidateDatabase.map(c => c.bio);
-      const result = await shortlistCandidatesServer({
-        data: {
-          jobDescription: jobDescription.trim(),
-          candidates: candidatesBio
+      let result;
+      try {
+        result = await shortlistCandidatesServer({
+          data: {
+            jobDescription: jobDescription.trim(),
+            candidates: candidatesBio
+          }
+        });
+      } catch (serverErr) {
+        console.warn("Server function failed, falling back to client-side API call...", serverErr);
+      }
+
+      if (!result) {
+        const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.API_KEY || process.env.API_KEY;
+        if (!apiKey) {
+          throw new Error("NVIDIA API key not found. Please ensure VITE_API_KEY or API_KEY is set in your Vercel Environment Variables.");
         }
-      });
+
+        const systemPrompt = {
+          role: "system",
+          content: "You are an AI Recruitment Assistant for an SDG-5 tech equity platform. Analyze the employer's job description, cross-reference it with our anonymous candidate database, and return a clean, styled markdown list shortlisting the best matches. Explain briefly why their skills fit the job requirements perfectly, emphasizing remote capability."
+        };
+
+        const userPrompt = `Employer Job Description:\n${jobDescription.trim()}\n\nAnonymous Candidate Database:\n${candidatesBio.map((c, i) => `Candidate #${i + 1}: ${c}`).join("\n")}`;
+
+        const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+            messages: [
+              systemPrompt,
+              { role: "user", content: userPrompt }
+            ]
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`NVIDIA API error (${response.status}): ${errorText}`);
+        }
+
+        const json = await response.json();
+        result = json.choices?.[0]?.message?.content || "";
+      }
 
       setShortlistResult(result);
     } catch (err) {
